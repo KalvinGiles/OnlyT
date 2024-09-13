@@ -15,6 +15,7 @@ using OnlyT.Services.OutputDisplays;
 using OnlyT.Services.Report;
 using OnlyT.Services.Snackbar;
 using OnlyT.Services.TalkSchedule;
+using OnlyT.Services.ZoomEvent;
 using OnlyT.Services.Timer;
 using OnlyT.WebServer;
 using System.IO;
@@ -90,6 +91,7 @@ namespace OnlyT
             serviceCollection.AddSingleton<IOptionsService, OptionsService>();
             serviceCollection.AddSingleton<ITalkScheduleService, TalkScheduleService>();
             serviceCollection.AddSingleton<IBellService, BellService>();
+            serviceCollection.AddSingleton<IZoomEventService, ZoomEventService>();
             serviceCollection.AddSingleton<IAdaptiveTimerService, AdaptiveTimerService>();
             serviceCollection.AddSingleton<IHttpServer, HttpServer>();
             serviceCollection.AddSingleton<ICommandLineService, CommandLineService>();

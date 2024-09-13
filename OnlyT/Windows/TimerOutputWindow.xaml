@@ -9,6 +9,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:valueConverters="clr-namespace:OnlyT.ValueConverters"
     xmlns:wpf="clr-namespace:NewTek.NDI.WPF;assembly=NDILibDotNetCoreWpf"
+    xmlns:emoji="http://schemas.inkore.net/lib/ui/wpf/emojis"
     x:Name="window"
     Title="OnlyT Timer Output"
     Width="458"
@@ -52,11 +53,15 @@
                 <ColumnDefinition Width="{Binding AnalogueClockColumnWidthPercentage, Converter={StaticResource ColWidthConverter}, Mode=OneWay}" />
                 <ColumnDefinition Width="{Binding TimerColumnWidthPercentage, Converter={StaticResource ColWidthConverter}, Mode=OneWay}" />
             </Grid.ColumnDefinitions>
-
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
             <Border
                 Name="ClockPanel"
                 Grid.Column="0"
                 Grid.ColumnSpan="2"
+                Grid.RowSpan="2"
                 Margin="0,0,5,0"
                 Padding="10"
                 Background="{Binding Path=UseClockBackgroundGradient, Converter={StaticResource ToBackgroundGradientConverter}}"
@@ -140,7 +145,17 @@
                 </Viewbox>
 
             </Border>
-
+            <Border Name="ZoomPanel" Grid.Column="1" Grid.Row="1" Background="Black" Opacity="0">
+                <Viewbox Name="ZoomPanel_Alert" Opacity="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Image emoji:EmojiImage.Source="🤚"/>
+                    </Grid>
+                </Viewbox>
+            </Border>
         </Grid>
 
     </wpf:NdiSendContainer>

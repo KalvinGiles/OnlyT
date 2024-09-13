@@ -8,6 +8,7 @@
     using EventArgs;
     using Models;
     using OnlyT.Common.Services.DateTime;
+    using OnlyT.Services.ZoomEvent;
     using Serilog;
     using Services.Bell;
     using Services.Options;
@@ -28,6 +29,7 @@
         public HttpServer(
             IOptionsService optionsService, 
             IBellService bellService,
+            IZoomEventService zoomEventService,
             ITalkTimerService timerService,
             ITalkScheduleService talksService,
             IDateTimeService dateTimeService)
@@ -41,6 +43,7 @@
                 _apiThrottler, 
                 _optionsService, 
                 bellService, 
+                zoomEventService,
                 timerService, 
                 talksService,
                 dateTimeService);

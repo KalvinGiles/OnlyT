@@ -11,6 +11,7 @@ using System.Windows.Media;
 using AnalogueClock;
 using Messages;
 using OnlyT.Common.Services.DateTime;
+using OnlyT.Services.ZoomEvent;
 using Services.Options;
 using Utils;
 
@@ -20,6 +21,7 @@ public class TimerOutputWindowViewModel : ObservableObject
     private static readonly int _secsPerHour = 60 * 60;
     private readonly IOptionsService _optionsService;
     private readonly IDateTimeService _dateTimeService;
+    private readonly IZoomEventService _zoomEventService;
     
     private int _analogueClockColumnWidthPercentage = -1;
     private string? _timeString;
@@ -31,11 +33,16 @@ public class TimerOutputWindowViewModel : ObservableObject
 
     public TimerOutputWindowViewModel(
         IOptionsService optionsService,
+        IZoomEventService zoomEventService,
         IDateTimeService dateTimeService)
     {
         _optionsService = optionsService;
+        _zoomEventService = zoomEventService;
         _dateTimeService = dateTimeService;
-        
+
+        // This is probably the wrong method
+        _zoomEventService.ZoomEvent += ZoomEventHandler;
+
         AnalogueClockColumnWidthPercentage = _optionsService.Options.AnalogueClockWidthPercent;
         ShowTimeOfDayUnderTimer = _optionsService.Options.ShowTimeOfDayUnderTimer;
 
@@ -200,6 +207,11 @@ public class TimerOutputWindowViewModel : ObservableObject
     public bool SplitAndFullScreenModeIdentical()
     {
         return _optionsService.Options.AnalogueClockWidthPercent == 100;
+    }
+
+    private void ZoomEventHandler(object? sender, System.EventArgs e)
+    {
+        WeakReferenceMessenger.Default.Send(new ZoomEventMessage());
     }
 
     private void OnShutDown(object recipient, ShutDownMessage obj)

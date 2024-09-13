@@ -52,7 +52,8 @@ namespace OnlyT.Windows
             WeakReferenceMessenger.Default.Register<TimerStartMessage>(this, OnTimerStarted);
             WeakReferenceMessenger.Default.Register<TimerStopMessage>(this, OnTimerStopped);
             WeakReferenceMessenger.Default.Register<NavigateMessage>(this, OnNavigate);
-            
+            WeakReferenceMessenger.Default.Register<ZoomEventMessage>(this, OnZoomEvent);
+
             _persistTimer.Tick += HandlePersistTimerTick;
         }
 
@@ -115,6 +116,46 @@ namespace OnlyT.Windows
             }
         }
 
+        private void OnZoomEvent(object recipient, ZoomEventMessage message)
+        {
+            // This event is raised by the HTTP thread, ensure we are synchronized
+            if (!ZoomPanel_Alert.Dispatcher.CheckAccess())
+            {
+                ZoomPanel_Alert.Dispatcher.Invoke((Action)delegate () {
+                    OnZoomEvent(recipient, message);
+                });
+                return;
+            }
+
+            var sb = new Storyboard();
+
+            var fadeZoom = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(300));
+            fadeZoom.AutoReverse = true;
+            fadeZoom.BeginTime = TimeSpan.Zero;
+            fadeZoom.RepeatBehavior = new RepeatBehavior(TimeSpan.FromSeconds(3.0));
+
+            Storyboard.SetTarget(fadeZoom, ZoomPanel_Alert);
+            Storyboard.SetTargetProperty(fadeZoom, new PropertyPath(OpacityProperty));
+
+            var fadeFullZoom = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(300));
+            fadeFullZoom.BeginTime = TimeSpan.FromSeconds(3.0);
+            
+            Storyboard.SetTarget(fadeFullZoom, ZoomPanel_Alert);
+            Storyboard.SetTargetProperty(fadeFullZoom , new PropertyPath(OpacityProperty));
+
+            var fadeOutZoom = new DoubleAnimation(1.0, 0.0, TimeSpan.FromMilliseconds(400));
+            fadeOutZoom.BeginTime = TimeSpan.FromSeconds(10.0f);
+
+            Storyboard.SetTarget(fadeOutZoom, ZoomPanel_Alert);
+            Storyboard.SetTargetProperty(fadeOutZoom, new PropertyPath(OpacityProperty));
+
+            sb.Children.Add(fadeZoom);
+            sb.Children.Add(fadeFullZoom);
+            sb.Children.Add(fadeOutZoom);
+
+            sb.Begin(this);
+        }
+
         private void OnTimerStopped(object recipient, TimerStopMessage msg)
         {
             if (msg.PersistFinalTimerValue)
@@ -155,6 +196,12 @@ namespace OnlyT.Windows
             Storyboard.SetTarget(fadeOutClock, ClockPanel);
             Storyboard.SetTargetProperty(fadeOutClock, new PropertyPath(OpacityProperty));
             fadeOutClock.BeginTime = TimeSpan.Zero;
+
+            // fade out zoom...
+            var fadeOutZoom = new DoubleAnimation(1.0, 0.0, TimeSpan.FromMilliseconds(400));
+            Storyboard.SetTarget(fadeOutZoom, ZoomPanel);
+            Storyboard.SetTargetProperty(fadeOutZoom, new PropertyPath(OpacityProperty));
+            fadeOutZoom.BeginTime = TimeSpan.Zero;
 
             GridLengthAnimation? rowHeightAdjust1 = null;
             GridLengthAnimation? rowHeightAdjust2 = null;
@@ -220,6 +267,7 @@ namespace OnlyT.Windows
 
             sb.Children.Add(fadeOutTimer);
             sb.Children.Add(fadeOutClock);
+            sb.Children.Add(fadeOutZoom);
 
             if (rowHeightAdjust1 != null)
             {
@@ -301,12 +349,19 @@ namespace OnlyT.Windows
             Storyboard.SetTargetProperty(fadeInTimer, new PropertyPath(OpacityProperty));
             fadeInTimer.BeginTime = TimeSpan.FromMilliseconds(1000);
 
+            // and fade in the zoom event panel
+            var fadeInZoom = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(400));
+            Storyboard.SetTarget(fadeInZoom, ZoomPanel);
+            Storyboard.SetTargetProperty(fadeInZoom, new PropertyPath(OpacityProperty));
+            fadeInZoom.BeginTime = TimeSpan.FromMilliseconds(1000);
+
             sb.Children.Add(fadeOutClock);
             sb.Children.Add(rowHeightAdjust1);
             sb.Children.Add(rowHeightAdjust2);
             sb.Children.Add(changeColSpan);
             sb.Children.Add(fadeInClock);
             sb.Children.Add(fadeInTimer);
+            sb.Children.Add(fadeInZoom);
 
             sb.Begin();
         }

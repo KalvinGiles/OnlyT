@@ -5,6 +5,7 @@ using System.Net;
 using ErrorHandling;
 using Models;
 using OnlyT.Common.Services.DateTime;
+using OnlyT.Services.ZoomEvent;
 using Services.Bell;
 using Services.Options;
 using Services.TalkSchedule;
@@ -24,11 +25,13 @@ internal sealed class ApiRouter : BaseApiController
     private readonly Lazy<DateTimeApiController> _dateTimeApiController;
     private readonly Lazy<BellApiController> _bellApiController;
     private readonly Lazy<SystemApiController> _systemApiController;
+    private readonly Lazy<ZoomEventApiController> _zoomEventApiController;
         
     public ApiRouter(
         ApiThrottler apiThrottler,
         IOptionsService optionsService,
         IBellService bellService,
+        IZoomEventService zoomEventService,
         ITalkTimerService timerService,
         ITalkScheduleService talksService,
         IDateTimeService dateTimeService)
@@ -45,6 +48,9 @@ internal sealed class ApiRouter : BaseApiController
 
         _bellApiController = new Lazy<BellApiController>(() =>
             new BellApiController(_optionsService, bellService, _apiThrottler));
+
+        _zoomEventApiController = new Lazy<ZoomEventApiController>(() =>
+            new ZoomEventApiController(_optionsService, zoomEventService, _apiThrottler));
 
         _systemApiController = new Lazy<SystemApiController>(() =>
             new SystemApiController(_optionsService, _apiThrottler));
@@ -97,6 +103,10 @@ internal sealed class ApiRouter : BaseApiController
 
                     case "bell":
                         _bellApiController.Value.Handler(request, response);
+                        break;
+
+                    case "zoom":
+                        _zoomEventApiController.Value.Handler(request, response);
                         break;
 
                     case "datetime":

@@ -17,4 +17,6 @@ public class ViewModelLocator
     public static TimerOutputWindowViewModel Output => Ioc.Default.GetService<TimerOutputWindowViewModel>()!;
 
     public static CountdownTimerViewModel Countdown => Ioc.Default.GetService<CountdownTimerViewModel>()!;
+
+    public static ZoomEventViewModel ZoomEvent => Ioc.Default.GetService<ZoomEventViewModel>()!;
 }
