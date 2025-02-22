@@ -4,8 +4,8 @@ REM Run from dev command line
 
 VERIFY ON
 
-D:
-cd \ProjectsPersonal\OnlyT
+F:
+cd "\Desktop Projects\OnlyT"
 rd OnlyT\bin /q /s
 rd OnlyTFirewallPorts\bin /q /s
 rd Installer\Output /q /s
@@ -45,7 +45,7 @@ IF %ERRORLEVEL% NEQ 0 goto ERROR
 
 ECHO.
 ECHO Creating installer
-"D:\Program Files (x86)\Inno Setup 6\iscc" Installer\onlytsetup.iss
+"C:\Program Files (x86)\Inno Setup 6\iscc" Installer\onlytsetup.iss
 IF %ERRORLEVEL% NEQ 0 goto ERROR
 
 ECHO.
