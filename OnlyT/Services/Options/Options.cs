@@ -41,13 +41,13 @@
             PersistStudentTime = true;
             MeetingStartTimes = new MeetingStartTimes.MeetingStartTimes();
             ShowDigitalSeconds = true;
-            JwLibraryCompatibilityMode = true;
             CountdownFrame = true;
             TimerFrame = true;
             LogEventLevel = LogEventLevel.Information;
             ShowBackgroundOnClock = true;
             ShrinkOnMinimise = true;
             TimerReminder = true;
+            OverrunNotifications = false;
 
             AdjustClockFormat();
         }
@@ -96,13 +96,13 @@
 
         public bool PersistStudentTime { get; set; }
 
-        public bool JwLibraryCompatibilityMode { get; set; }
-
         public bool AlwaysOnTop { get; set; }
 
         public bool ShrinkOnMinimise { get; set; }
 
         public bool TimerReminder { get; set; }
+
+        public bool OverrunNotifications { get; set; }
 
         public bool IsBellEnabled { get; set; }
 

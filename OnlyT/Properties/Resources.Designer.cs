@@ -650,24 +650,6 @@ namespace OnlyT.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to JW Library® compatibility mode.
-        /// </summary>
-        public static string JW_COMPAT_MODE {
-            get {
-                return ResourceManager.GetString("JW_COMPAT_MODE", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to &quot;JW Library&quot; is a registered trademark of Watch Tower Bible and Tract Society of Pennsylvania.
-        /// </summary>
-        public static string JWL_TRADEMARK {
-            get {
-                return ResourceManager.GetString("JWL_TRADEMARK", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Language.
         /// </summary>
         public static string LANGUAGE {
@@ -997,6 +979,24 @@ namespace OnlyT.Properties {
         public static string OPEN_PORT {
             get {
                 return ResourceManager.GetString("OPEN_PORT", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The meeting is running {0} minutes overtime.
+        /// </summary>
+        public static string OVERRUN_MSG {
+            get {
+                return ResourceManager.GetString("OVERRUN_MSG", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Overrun/Underrun notifications.
+        /// </summary>
+        public static string OVERRUN_NOTIFICATIONS {
+            get {
+                return ResourceManager.GetString("OVERRUN_NOTIFICATIONS", resourceCulture);
             }
         }
         
@@ -1523,6 +1523,15 @@ namespace OnlyT.Properties {
         public static string TimersHtmlTemplate {
             get {
                 return ResourceManager.GetString("TimersHtmlTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The meeting is running {0} minutes undertime.
+        /// </summary>
+        public static string UNDERRUN_MSG {
+            get {
+                return ResourceManager.GetString("UNDERRUN_MSG", resourceCulture);
             }
         }
         

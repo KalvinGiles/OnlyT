@@ -366,19 +366,6 @@ public class SettingsPageViewModel : ObservableObject, IPage
         }
     }
 
-    public bool JwLibraryCompatibilityMode
-    {
-        get => _optionsService.Options.JwLibraryCompatibilityMode;
-        set
-        {
-            if (_optionsService.Options.JwLibraryCompatibilityMode != value)
-            {
-                _optionsService.Options.JwLibraryCompatibilityMode = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
     public bool PersistStudentTime
     {
         get => _optionsService.Options.PersistStudentTime;
@@ -609,6 +596,19 @@ public class SettingsPageViewModel : ObservableObject, IPage
             if (_optionsService.Options.TimerReminder != value)
             {
                 _optionsService.Options.TimerReminder = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool OverrunNotifications
+    {
+        get => _optionsService.Options.OverrunNotifications;
+        set
+        {
+            if (_optionsService.Options.OverrunNotifications != value)
+            {
+                _optionsService.Options.OverrunNotifications = value;
                 OnPropertyChanged();
             }
         }

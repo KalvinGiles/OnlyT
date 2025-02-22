@@ -18,7 +18,7 @@ using ToastNotifications.Position;
 
 namespace OnlyT.Services.Reminders;
 
-internal class ReminderService : IReminderService
+public class ReminderService : IReminderService
 {
     private const int DefaultIntervalBetweenRepeatedRemindersSeconds = 30;
     private const int LongIntervalBetweenRepeatedRemindersSeconds = 60;
@@ -71,22 +71,6 @@ internal class ReminderService : IReminderService
         WeakReferenceMessenger.Default.Register<CountdownWindowStatusChangedMessage>(this, OnCountdownStatusChanged);
     }
 
-    public void Send(string msg)
-    {
-        _lastReminderShown = _dateTimeService.Now();
-
-        if (_optionsService.Options.TimerReminder)
-        {
-            _notifier.ShowWarning(msg, new MessageOptions
-            {
-                ShowCloseButton = true,
-                FreezeOnMouseEnter = false,
-                FontSize = 14,
-                CloseClickAction = OnReminderClosed,
-            });
-        }
-    }
-
     public void Shutdown()
     {
         _reminderTimer.Stop();
@@ -101,7 +85,18 @@ internal class ReminderService : IReminderService
 
     private void SendTalkTimerReminder()
     {
-        Send(Properties.Resources.TIMER_REMINDER_MSG);
+        _lastReminderShown = _dateTimeService.Now();
+
+        if (_optionsService.Options.TimerReminder)
+        {
+            _notifier.ShowWarning(Properties.Resources.TIMER_REMINDER_MSG, new MessageOptions
+            {
+                ShowCloseButton = true,
+                FreezeOnMouseEnter = false,
+                FontSize = 14,
+                CloseClickAction = OnReminderClosed,
+            });
+        }
     }
 
     private void OnTalkTimerStop(object recipient, TimerStopMessage message)
