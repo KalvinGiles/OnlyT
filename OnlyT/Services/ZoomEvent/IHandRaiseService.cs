@@ -2,9 +2,9 @@
 
 namespace OnlyT.Services.ZoomEvent;
 
-public interface IZoomEventService
+public interface IHandRaiseService
 {
-    event EventHandler ZoomEvent;
+    event EventHandler HandEvent;
     bool HandIsRaised { get; }
     void RaiseHand();
 }

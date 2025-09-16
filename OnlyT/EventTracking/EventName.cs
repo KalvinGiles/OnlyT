@@ -3,17 +3,9 @@
 internal enum EventName
 {
     Unknown,
-    DisableGPU,
+    DisableGpu,
     InitHttpServer,
     CountdownTimer,
-    CountUp,
-    CountDown,
     StartingTimer,
     StoppingTimer,
-    LaunchHelp,
-    Increment,
-    Decrement,
-    Adaptive,
-    NotAdaptive,
-    CountDownMins
 }

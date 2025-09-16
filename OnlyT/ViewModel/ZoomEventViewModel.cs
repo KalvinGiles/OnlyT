@@ -14,16 +14,16 @@ namespace OnlyT.ViewModel
     public class ZoomEventViewModel : ObservableObject
     {
         private readonly IOptionsService _optionsService;
-        private readonly IZoomEventService _zoomEventService;
+        private readonly IHandRaiseService _zoomEventService;
 
         public bool ApplicationClosing { get; private set; }
 
-        public ZoomEventViewModel(IOptionsService optionsService, IZoomEventService zoomEventService)
+        public ZoomEventViewModel(IOptionsService optionsService, IHandRaiseService zoomEventService)
         {
             _optionsService = optionsService;
             _zoomEventService = zoomEventService;
 
-            _zoomEventService.ZoomEvent += ZoomEventHandler;
+            _zoomEventService.HandEvent += ZoomEventHandler;
 
             WeakReferenceMessenger.Default.Register<ShutDownMessage>(this, OnShutDown);
         }

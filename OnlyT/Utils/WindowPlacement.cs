@@ -74,8 +74,7 @@
     {
         private const int SW_SHOWNORMAL = 1;
         private const int SW_SHOWMINIMIZED = 2;
-
-        private static readonly Encoding Encoding = new UTF8Encoding();
+        
         private static readonly XmlSerializer Serializer = new(typeof(WINDOWPLACEMENT));
 
         public static Rect SetPlacement(this Window window, string placementJson)
@@ -83,7 +82,7 @@
             return SetPlacement(new WindowInteropHelper(window).Handle, placementJson);
         }
 
-        public static string GetPlacement(this Window window)
+        public static string? GetPlacement(this Window window)
         {
             return GetPlacement(new WindowInteropHelper(window).Handle);
         }
@@ -115,7 +114,7 @@
         {
             if (!string.IsNullOrEmpty(placementJson))
             {
-                var xmlBytes = Encoding.GetBytes(placementJson);
+                var xmlBytes = Encoding.UTF8.GetBytes(placementJson);
                 try
                 {
                     WINDOWPLACEMENT placement;
@@ -150,15 +149,18 @@
             return default;
         }
 
-        private static string GetPlacement(IntPtr windowHandle)
+        private static string? GetPlacement(IntPtr windowHandle)
         {
-            NativeMethods.GetWindowPlacement(windowHandle, out var placement);
+            if (!NativeMethods.GetWindowPlacement(windowHandle, out var placement))
+            {
+                return null;
+            }
 
             using var memoryStream = new MemoryStream();
             var xmlTextWriter = new XmlTextWriter(memoryStream, Encoding.UTF8);
             Serializer.Serialize(xmlTextWriter, placement);
             var xmlBytes = memoryStream.ToArray();
-            return Encoding.GetString(xmlBytes);
+            return Encoding.UTF8.GetString(xmlBytes);
         }
     }
 

@@ -7,23 +7,20 @@ using Newtonsoft.Json;
 using OnlyT.Common.Services.DateTime;
 using Serilog;
 using OnlyT.Utils;
-using OnlyT.EventTracking;
 
 namespace OnlyT.MeetingTalkTimesFeed;
 
 internal sealed class TimesFeed
 {
-#pragma warning disable S1075 // URIs should not be hardcoded
-    private static readonly string FeedUrl = "https://soundbox.blob.core.windows.net/meeting-feeds/feed.json";
-#pragma warning restore S1075 // URIs should not be hardcoded
-
+    private readonly string _feedUri;
     private readonly string _localFeedFile;
     private readonly int _tooOldDays = 20;
-    private IEnumerable<Meeting>? _meetingData;
+    private List<Meeting>? _meetingData;
 
-    public TimesFeed()
+    public TimesFeed(string feedUri)
     {
-        _localFeedFile = Path.Combine(FileUtils.GetAppDataFolder(), "feed.json");
+        _feedUri = feedUri;
+        _localFeedFile = FileUtils.GetTimesFeedPath();
     }
 
     public Meeting? GetMeetingDataForToday(IDateTimeService dateTimeService)
@@ -95,7 +92,7 @@ internal sealed class TimesFeed
         _meetingData ??= LoadFileInternal(today);
     }
 
-    private IReadOnlyCollection<Meeting>? LoadFileInternal(DateTime today)
+    private List<Meeting>? LoadFileInternal(DateTime today)
     {
         List<Meeting>? result = null;
 
@@ -122,7 +119,7 @@ internal sealed class TimesFeed
         {
             try
             {
-                var content = WebUtils.LoadWithUserAgent(FeedUrl);
+                var content = WebUtils.LoadWithUserAgent(_feedUri);
                 if (content != null)
                 {
                     result = JsonConvert.DeserializeObject<List<Meeting>>(content);
@@ -138,7 +135,7 @@ internal sealed class TimesFeed
         return result;
     }
 
-    private static Meeting? GetMeetingDataForTodayInternal(IEnumerable<Meeting>? meetingData)
+    private static Meeting? GetMeetingDataForTodayInternal(List<Meeting>? meetingData)
     {
         var monday = DateUtils.GetMondayOfThisWeek();
         return meetingData?.FirstOrDefault(x => x.Date.Date.Equals(monday));

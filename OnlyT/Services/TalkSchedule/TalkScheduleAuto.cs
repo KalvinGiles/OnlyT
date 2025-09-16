@@ -60,11 +60,13 @@
         /// </summary>
         /// <param name="optionsService">Options service.</param>
         /// <param name="dateTimeService">DateTime service.</param>
+        /// <param name="feedUri">The Uri of the json feed containing meeting schedule data.</param>
         /// <param name="isJanuary2020OrLater">True if current date is greater than 5 Jan 2020.</param>
         /// <returns>A collection of TalkScheduleItem.</returns>
-        public static IEnumerable<TalkScheduleItem> Read(
+        public static List<TalkScheduleItem> Read(
             IOptionsService optionsService,
             IDateTimeService dateTimeService,
+            string feedUri,
             bool isJanuary2020OrLater)
         {
             var isCircuitVisit = optionsService.Options.IsCircuitVisit;
@@ -75,10 +77,10 @@
                     isCircuitVisit, 
                     optionsService.Options.IsBellEnabled && optionsService.Options.AutoBell,
                     isJanuary2020OrLater,
-                    GetFeedForToday(dateTimeService));
+                    GetFeedForToday(dateTimeService, feedUri));
         }
 
-        public static IEnumerable<TalkScheduleItem> GetMidweekScheduleForTesting(
+        public static List<TalkScheduleItem> GetMidweekScheduleForTesting(
             DateTime theDate,
             bool isJanuary2020OrLater)
         {
@@ -89,9 +91,9 @@
                 TimesFeed.GetSampleMidweekMeetingDataForTesting(theDate));
         }
         
-        private static Meeting? GetFeedForToday(IDateTimeService dateTimeService)
+        private static Meeting? GetFeedForToday(IDateTimeService dateTimeService, string feedUri)
         {
-            var feed = new TimesFeed().GetMeetingDataForToday(dateTimeService);
+            var feed = new TimesFeed(feedUri).GetMeetingDataForToday(dateTimeService);
             if (feed != null)
             {
                 SuccessGettingAutoFeedForMidWeekMtg = true;
@@ -130,11 +132,11 @@
                 return GetTreasuresSchedulePreJan2020(autoBell);
             }
 
-            return new List<TalkScheduleItem>
-            {
+            return
+            [
                 CreateTreasuresItem(
-                    TalkTypesAutoMode.OpeningComments, 
-                    Properties.Resources.TALK_OPENING_COMMENTS, 
+                    TalkTypesAutoMode.OpeningComments,
+                    Properties.Resources.TALK_OPENING_COMMENTS,
                     new TimeSpan(0, 5, 0),
                     TimeSpan.FromMinutes(1),
                     false,
@@ -143,9 +145,9 @@
                     false),
 
                 CreateTreasuresItem(
-                    TalkTypesAutoMode.TreasuresTalk, 
-                    Properties.Resources.TALK_TREASURES, 
-                    new TimeSpan(0, 6, 20), 
+                    TalkTypesAutoMode.TreasuresTalk,
+                    Properties.Resources.TALK_TREASURES,
+                    new TimeSpan(0, 6, 20),
                     TimeSpan.FromMinutes(10),
                     false,
                     false,
@@ -153,9 +155,9 @@
                     false),
 
                 CreateTreasuresItem(
-                    TalkTypesAutoMode.DiggingTalk, 
-                    Properties.Resources.TALK_DIGGING, 
-                    new TimeSpan(0, 16, 40), 
+                    TalkTypesAutoMode.DiggingTalk,
+                    Properties.Resources.TALK_DIGGING,
+                    new TimeSpan(0, 16, 40),
                     TimeSpan.FromMinutes(10),
                     false,
                     false,
@@ -163,21 +165,21 @@
                     false),
 
                 CreateTreasuresItem(
-                    TalkTypesAutoMode.Reading, 
-                    Properties.Resources.TALK_READING, 
-                    new TimeSpan(0, 27, 0), 
-                    TimeSpan.FromMinutes(4), 
-                    true, 
+                    TalkTypesAutoMode.Reading,
+                    Properties.Resources.TALK_READING,
+                    new TimeSpan(0, 27, 0),
+                    TimeSpan.FromMinutes(4),
+                    true,
                     true,
                     autoBell,
                     true)
-            };
+            ];
         }
 
         private static List<TalkScheduleItem> GetTreasuresSchedulePreJan2020(bool autoBell)
         {
-            return new List<TalkScheduleItem>
-            {
+            return
+            [
                 CreateTreasuresItem(
                     TalkTypesAutoMode.OpeningComments,
                     Properties.Resources.TALK_OPENING_COMMENTS,
@@ -217,7 +219,7 @@
                     true,
                     autoBell,
                     true)
-            };
+            ];
         }
 
         private static TalkScheduleItem CreateMinistryItem(
@@ -243,7 +245,7 @@
             };
         }
 
-        private static IEnumerable<TalkScheduleItem> GetMinistrySchedule(Meeting? meetingData, bool autoBell)
+        private static List<TalkScheduleItem> GetMinistrySchedule(Meeting? meetingData, bool autoBell)
         {
             var result = new List<TalkScheduleItem>();
 
@@ -338,7 +340,7 @@
             };
         }
 
-        private static IEnumerable<TalkScheduleItem> GetLivingSchedule(bool isCircuitVisit, Meeting? meetingData)
+        private static List<TalkScheduleItem> GetLivingSchedule(bool isCircuitVisit, Meeting? meetingData)
         {
             var result = new List<TalkScheduleItem>();
 

@@ -25,13 +25,13 @@ internal sealed class ApiRouter : BaseApiController
     private readonly Lazy<DateTimeApiController> _dateTimeApiController;
     private readonly Lazy<BellApiController> _bellApiController;
     private readonly Lazy<SystemApiController> _systemApiController;
-    private readonly Lazy<ZoomEventApiController> _zoomEventApiController;
+    private readonly Lazy<HandRaiseEventApiController> _handEventApiController;
         
     public ApiRouter(
         ApiThrottler apiThrottler,
         IOptionsService optionsService,
         IBellService bellService,
-        IZoomEventService zoomEventService,
+        IHandRaiseService handRaiseEventService,
         ITalkTimerService timerService,
         ITalkScheduleService talksService,
         IDateTimeService dateTimeService)
@@ -49,8 +49,8 @@ internal sealed class ApiRouter : BaseApiController
         _bellApiController = new Lazy<BellApiController>(() =>
             new BellApiController(_optionsService, bellService, _apiThrottler));
 
-        _zoomEventApiController = new Lazy<ZoomEventApiController>(() =>
-            new ZoomEventApiController(_optionsService, zoomEventService, _apiThrottler));
+        _handEventApiController = new Lazy<HandRaiseEventApiController>(() =>
+            new HandRaiseEventApiController(_optionsService, handRaiseEventService, _apiThrottler));
 
         _systemApiController = new Lazy<SystemApiController>(() =>
             new SystemApiController(_optionsService, _apiThrottler));
@@ -64,8 +64,6 @@ internal sealed class ApiRouter : BaseApiController
         }
         else
         {
-            var apiCode = _optionsService.Options.ApiCode;
-
             if (request.Url?.Segments.Length < 2)
             {
                 throw new WebServerException(WebServerErrorCode.UriTooFewSegments);
@@ -88,6 +86,7 @@ internal sealed class ApiRouter : BaseApiController
                 if (!segment.Equals("system"))
                 {
                     // we don't check the api code for calls to the "system" API
+                    var apiCode = _optionsService.Options.ApiCode;
                     CheckApiCode(request, apiCode);
                 }
                     
@@ -105,8 +104,9 @@ internal sealed class ApiRouter : BaseApiController
                         _bellApiController.Value.Handler(request, response);
                         break;
 
+                    case "hand":
                     case "zoom":
-                        _zoomEventApiController.Value.Handler(request, response);
+                        _handEventApiController.Value.Handler(request, response);
                         break;
 
                     case "datetime":

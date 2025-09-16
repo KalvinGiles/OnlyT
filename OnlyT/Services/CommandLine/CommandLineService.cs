@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Net;
 using Fclp;
 
 namespace OnlyT.Services.CommandLine;
@@ -7,6 +8,12 @@ namespace OnlyT.Services.CommandLine;
 // ReSharper disable once ClassNeverInstantiated.Global
 internal sealed class CommandLineService : ICommandLineService
 {
+    // DefaultFeedUri refers to the json feed that provides information on meeting agenda items
+    // for the automatic mode. If the default feed becomes unavailable or is no longer maintained
+    // you can specify it on the command line, or you can modify the source here:
+
+    private static readonly string DefaultFeedUri = "https://soundbox.blob.core.windows.net/meeting-feeds/feed.json";
+
     public CommandLineService()
     {
         var p = new FluentCommandLineParser();
@@ -55,7 +62,43 @@ internal sealed class CommandLineService : ICommandLineService
         p.Setup<bool>("cndi")
             .Callback(s => IsCountdownNdi = s).SetDefault(false);
 
+        p.Setup<string?>("ip")
+            .Callback(SafeSetRemoteIpAddress).SetDefault(null);
+
+        p.Setup<string?>("feed")
+            .Callback(SafeSetFeedUri).SetDefault(DefaultFeedUri);
+
+        p.Setup<string?>("docs")
+            .Callback(SafeSetDocsFolder).SetDefault(null);
+
         p.Parse(Environment.GetCommandLineArgs());
+    }
+
+    private void SafeSetDocsFolder(string? folder)
+    {
+        OnlyTDocsFolder = string.IsNullOrWhiteSpace(folder) ? null : folder;
+    }
+
+    private void SafeSetRemoteIpAddress(string? ipAddress)
+    {
+        if (string.IsNullOrWhiteSpace(ipAddress))
+        {
+            RemoteIpAddress = null;
+        }
+        else
+        {
+            RemoteIpAddress = IPAddress.TryParse(ipAddress, out var result) 
+                ? result.ToString() 
+                : null;
+        }
+    }
+
+    private void SafeSetFeedUri(string? feedUri)
+    {
+        FeedUri = string.IsNullOrWhiteSpace(feedUri) ||
+                  !Uri.IsWellFormedUriString(feedUri, UriKind.Absolute)
+            ? DefaultFeedUri
+            : feedUri;
     }
 
     public bool NoGpu { get; set; }
@@ -83,4 +126,10 @@ internal sealed class CommandLineService : ICommandLineService
     public bool IsTimerNdi { get; set; }
 
     public bool IsCountdownNdi { get; set; }
+
+    public string? RemoteIpAddress { get; set; }
+
+    public string FeedUri { get; set; } = DefaultFeedUri;
+
+    public string? OnlyTDocsFolder { get; set; }
 }

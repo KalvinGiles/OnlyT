@@ -1,11 +1,4 @@
-﻿using System;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Windows;
-using System.Windows.Markup;
-using CommunityToolkit.Mvvm.Messaging;
+﻿using CommunityToolkit.Mvvm.Messaging;
 using Newtonsoft.Json;
 using OnlyT.Common.Services.DateTime;
 using OnlyT.EventTracking;
@@ -16,6 +9,14 @@ using OnlyT.Utils;
 using OnlyT.ViewModel;
 using OnlyT.ViewModel.Messages;
 using Serilog;
+using Serilog.Events;
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Windows;
+using System.Windows.Markup;
 
 namespace OnlyT.Services.Options;
 
@@ -146,7 +147,10 @@ internal sealed class OptionsService : IOptionsService
             {
                 // changed...
                 WriteOptions();
-                Log.Logger.Information("Settings changed and saved");
+                if (Log.IsEnabled(LogEventLevel.Information))
+                {
+                    Log.Logger.Information("Settings changed and saved");
+                }
             }
         }
         catch (Exception ex)
@@ -180,8 +184,6 @@ internal sealed class OptionsService : IOptionsService
                 _originalOptionsSignature = GetOptionsSignature(_options);
 
                 _logLevelSwitchService.SetMinimumLevel(Options.LogEventLevel);
-
-                TrackSomeOptions();
             }
             catch (Exception ex)
             {
@@ -192,20 +194,6 @@ internal sealed class OptionsService : IOptionsService
                 _options = new Options();
             }
         }
-    }
-
-    private void TrackSomeOptions()
-    {
-        if (Options.MidWeekAdaptiveMode == AdaptiveMode.None) 
-        {
-            EventTracker.Track(EventName.NotAdaptive);
-        }
-        else
-        {
-            EventTracker.Track(EventName.Adaptive);
-        }
-
-        EventTracker.TrackCountdownMins(Options.CountdownDurationMins);
     }
 
     private void SetCulture()

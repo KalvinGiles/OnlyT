@@ -2,6 +2,27 @@
 
 // Ignore Spelling: snackbar
 
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using OnlyT.AutoUpdates;
+using OnlyT.Common.Services.DateTime;
+using OnlyT.EventTracking;
+using OnlyT.Models;
+using OnlyT.Services.Automate;
+using OnlyT.Services.Bell;
+using OnlyT.Services.CommandLine;
+using OnlyT.Services.Options;
+using OnlyT.Services.OverrunNotificationService;
+using OnlyT.Services.Report;
+using OnlyT.Services.Snackbar;
+using OnlyT.Services.TalkSchedule;
+using OnlyT.Services.Timer;
+using OnlyT.Utils;
+using OnlyT.ViewModel.Messages;
+using OnlyT.WebServer.ErrorHandling;
+using Serilog;
+using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,26 +31,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
-using OnlyT.AutoUpdates;
-using OnlyT.ViewModel.Messages;
-using OnlyT.Models;
-using OnlyT.Common.Services.DateTime;
-using OnlyT.Services.Automate;
-using OnlyT.Services.Report;
-using OnlyT.Services.Snackbar;
-using Serilog;
-using OnlyT.Services.Bell;
-using OnlyT.Services.CommandLine;
-using OnlyT.Services.Options;
-using OnlyT.Services.TalkSchedule;
-using OnlyT.Services.Timer;
-using OnlyT.Utils;
-using OnlyT.WebServer.ErrorHandling;
-using OnlyT.EventTracking;
-using OnlyT.Services.OverrunNotificationService;
 
 namespace OnlyT.ViewModel;
 
@@ -40,7 +41,7 @@ public class OperatorPageViewModel : ObservableObject, IPage
 {
     private static readonly string Arrow = "→";
         
-    private static readonly Brush WhiteBrush = Brushes.White;
+    private static readonly SolidColorBrush WhiteBrush = Brushes.White;
     private static readonly int MaxTimerMins = 99;
     private static readonly int MaxTimerSecs = MaxTimerMins * 60;
 
@@ -149,6 +150,8 @@ public class OperatorPageViewModel : ObservableObject, IPage
                 dateTimeService);
 
             automationService.Execute();
+
+            _snackbarService.Enqueue("Automate starts on the nearest 1/4 hr");
 #endif
         }
     }
@@ -455,7 +458,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     public void Activated(object? state)
     {
-        Log.Logger.Debug("Operator page activated");
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Logger.Debug("Operator page activated");
+        }
 
         // "CountUp" setting may have changed
         var talk = GetCurrentTalk();
@@ -468,8 +474,12 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     private void StartTimer()
     {
-        Log.Logger.Debug("Starting timer");
-        EventTracker.Track(EventName.StartingTimer);
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Logger.Debug("Starting timer");
+        }
+
+        EventTracker.AddBreadcrumb(EventName.StartingTimer, "timer:starting");
 
         _isStarting = true;
         _secondsElapsed = 0;
@@ -516,14 +526,17 @@ public class OperatorPageViewModel : ObservableObject, IPage
                 return;
             }
 
-            Log.Logger.Debug("Storing timer start data");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug("Storing timer start data");
+            }
 
             if (IsFirstTalk(talk.Id))
             {
                 StoreTimerDataForStartOfMeeting();
             }
 
-            if (IsFirstTalkAfterInterim(talk.Id))
+            if (IsFirstTalkAfterInterval(talk.Id))
             {
                 var prevTalk = GetPreviousTalk(talk.Id);
                 StoreTimerDataForInterim(prevTalk?.IsStudentTalk ?? false);
@@ -540,7 +553,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     private void StoreTimerDataForInterim(bool allowForCounselTime)
     {
-        Log.Logger.Debug("Storing timer data for interim segment");
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Logger.Debug("Storing timer data for interim segment");
+        }
 
         var lastItemStop = _timingDataService.LastTimerStop;
         var interimStart = lastItemStop.AddSeconds(allowForCounselTime ? 75 : 15);
@@ -552,7 +568,7 @@ public class OperatorPageViewModel : ObservableObject, IPage
             new TimeSpan(0, 3, 20));
     }
 
-    private static bool IsFirstTalkAfterInterim(int talkId)
+    private static bool IsFirstTalkAfterInterval(int talkId)
     {
         var talkType = (TalkTypesAutoMode)talkId;
 
@@ -562,7 +578,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     private void StoreTimerDataForStartOfMeeting()
     {
-        Log.Logger.Debug("Storing timer data for introductory segment");
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Logger.Debug("Storing timer data for introductory segment");
+        }
 
         // insert start of meeting...
         var startTime = CalculateStartOfMeeting();
@@ -603,7 +622,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
     {
         if (_optionsService.Options.OperatingMode == OperatingMode.Automatic)
         {
-            Log.Logger.Debug("Storing timer stop data");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug("Storing timer stop data");
+            }
 
             _timingDataService.InsertTimerStop();
         }
@@ -613,7 +635,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
     {
         if (_optionsService.Options.OperatingMode == OperatingMode.Automatic)
         {
-            Log.Logger.Debug("Storing end of meeting timer data");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug("Storing end of meeting timer data");
+            }
 
             var songStart = _dateTimeService.Now().AddSeconds(5);
 
@@ -634,12 +659,18 @@ public class OperatorPageViewModel : ObservableObject, IPage
                 var newDuration = _adaptiveTimerService.CalculateAdaptedDuration(TalkId);
                 if (newDuration != null)
                 {
-                    Log.Logger.Debug($"New duration = {newDuration.Value:g}");
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Logger.Debug("New duration = {NewDuration}", newDuration.Value);
+                    }
 
                     var talk = GetCurrentTalk();
                     if (talk != null)
                     {
-                        Log.Logger.Debug($"Adjusting item for adaptive time. New duration = {newDuration.Value:g}");
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Logger.Debug("Adjusting item for adaptive time. New duration = {NewDuration}", newDuration.Value);
+                        }
 
                         talk.AdaptedDuration = newDuration.Value;
                         SetDurationStringAttributes(talk);
@@ -736,7 +767,13 @@ public class OperatorPageViewModel : ObservableObject, IPage
         {
             var modifiedDuration = TimeSpan.FromSeconds(TargetSeconds);
 
-            Log.Logger.Debug($"Talk timer ({talk.Name}) adjusted for this session. Modified duration = {modifiedDuration}");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug(
+                    "Talk timer ({TalkName}) adjusted for this session. Modified duration = {ModifiedDuration}",
+                    talk.Name,
+                    modifiedDuration);
+            }
 
             if (IsManualMode)
             {
@@ -755,7 +792,11 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     private void CloseCountdownWindow()
     {
-        Log.Logger.Debug("Sending StopCountDownMessage");
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Logger.Debug("Sending StopCountDownMessage");
+        }
+
         WeakReferenceMessenger.Default.Send(new StopCountDownMessage());
     }
 
@@ -808,7 +849,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
     {
         try
         {
-            Log.Logger.Debug("Meeting schedule changing");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug("Meeting schedule changing");
+            }
 
             RefreshSchedule();
         }
@@ -833,43 +877,40 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     private void DecrementTimer()
     {
-        EventTracker.TrackDecrement(60);
         IncrementDecrementTimerInternal(-60);
     }
 
     private void DecrementTimer15Secs()
     {
-        EventTracker.TrackDecrement(15);
         IncrementDecrementTimerInternal(-15);
     }
 
     private void DecrementTimer5Mins()
     {
-        EventTracker.TrackDecrement(5 * 60);
         IncrementDecrementTimerInternal(-5 * 60);
     }
 
     private void IncrementTimer()
     {
-        EventTracker.TrackIncrement(60);
         IncrementDecrementTimerInternal(60);
     }
 
     private void IncrementTimer15Secs()
     {
-        EventTracker.TrackIncrement(15);
         IncrementDecrementTimerInternal(15);
     }
 
     private void IncrementTimer5Mins()
     {
-        EventTracker.TrackIncrement(5 * 60);
         IncrementDecrementTimerInternal(5 * 60);
     }
 
     private void OnOperatingModeChanged(object recipient, OperatingModeChangedMessage message)
     {
-        Log.Logger.Debug("Responding to change in operating mode");
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Logger.Debug("Responding to change in operating mode");
+        }
 
         OnPropertyChanged(nameof(IsAutoMode));
         OnPropertyChanged(nameof(ShouldShowCircuitVisitToggle));
@@ -921,8 +962,12 @@ public class OperatorPageViewModel : ObservableObject, IPage
     private async void StopTimer()
 #pragma warning restore S3168 // "async" methods should not return "void"
     {
-        Log.Logger.Debug("Stopping timer");
-        EventTracker.Track(EventName.StoppingTimer);
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Logger.Debug("Stopping timer");
+        }
+
+        EventTracker.AddBreadcrumb(EventName.StoppingTimer, "timer:stopping");
 
         IsOvertime = false;
 
@@ -1027,8 +1072,6 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     private void LaunchHelp()
     {
-        EventTracker.Track(EventName.LaunchHelp);
-
         var psi = new ProcessStartInfo
         {
             FileName = "https://github.com/AntonyCorbett/OnlyT/wiki",
@@ -1063,7 +1106,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
         Application.Current.Dispatcher.Invoke(() =>
         {
             // always on UI thread to prevent synchronisation issues.
-            Log.Logger.Debug("Handling timer control from API");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug("Handling timer control from API");
+            }
 
             CheckTalkExists(e.TalkId);
 
@@ -1115,11 +1161,8 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     private void CheckTalkExists(int talkId)
     {
-        var talk = _scheduleService.GetTalkScheduleItem(talkId);
-        if (talk == null)
-        {
-            throw new WebServerException(WebServerErrorCode.TimerDoesNotExist);
-        }
+        _ = _scheduleService.GetTalkScheduleItem(talkId) 
+            ?? throw new WebServerException(WebServerErrorCode.TimerDoesNotExist);
     }
 
     private void RaiseCanExecuteIncrementDecrementChanged()
@@ -1138,7 +1181,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
         if (_optionsService.Options.OperatingMode == OperatingMode.Automatic &&
             _optionsService.Options.GenerateTimingReports)
         {
-            Log.Logger.Debug("Generating timer report");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug("Generating timer report");
+            }
 
             if (!InShrinkMode)
             {
@@ -1244,7 +1290,10 @@ public class OperatorPageViewModel : ObservableObject, IPage
 
     private void RefreshSchedule()
     {
-        Log.Logger.Debug("Refreshing schedule");
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Logger.Debug("Refreshing schedule");
+        }
 
         _scheduleService.Reset();
         TalkId = 0;

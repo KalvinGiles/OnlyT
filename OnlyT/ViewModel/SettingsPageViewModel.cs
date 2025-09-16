@@ -532,6 +532,20 @@ public class SettingsPageViewModel : ObservableObject, IPage
         }
     }
 
+    public bool DarkModeToggle
+    {
+        get => _optionsService.Options.DarkModeToggle;
+        set
+        {
+            if (_optionsService.Options.DarkModeToggle != value)
+            {
+                _optionsService.Options.DarkModeToggle = value;
+                OnPropertyChanged();
+                WeakReferenceMessenger.Default.Send(new DarkModeChangedMessage());
+            }
+        }
+    }
+
     public bool AllowCountUpToggle
     {
         get => _optionsService.Options.AllowCountUpToggle;
@@ -864,7 +878,7 @@ public class SettingsPageViewModel : ObservableObject, IPage
     {
         get
         {
-            var ipAddress = LocalIpAddress.GetLocalIp4Address();
+            var ipAddress = GetLocalIpAddress();
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 return $"http://{ipAddress}:{Port}/index";
@@ -874,11 +888,11 @@ public class SettingsPageViewModel : ObservableObject, IPage
         }
     }
 
-    public static string MobileIpAddress
+    public string MobileIpAddress
     {
         get
         {
-            var ipAddress = LocalIpAddress.GetLocalIp4Address();
+            var ipAddress = GetLocalIpAddress();
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 return ipAddress;
@@ -929,18 +943,24 @@ public class SettingsPageViewModel : ObservableObject, IPage
     {
         try
         {
-            Log.Logger.Information($"Attempting to reserve and open port: {Port}");
+            if (Log.IsEnabled(LogEventLevel.Information))
+            {
+                Log.Logger.Information("Attempting to reserve and open port: {Port}", Port);
+            }
 
             var rv = FirewallPortsClient.ReserveAndOpenPort(Port);
             if (rv != 0)
             {
-                Log.Logger.Warning($"Return value from reserve and open port = {rv}");
+                Log.Logger.Warning("Return value from reserve and open port = {ReturnValue}", rv);
 
                 _snackbarService.EnqueueWithOk(Properties.Resources.PORT_OPEN_FAILED);
             }
             else
             {
-                Log.Logger.Information($"Success reserving and opening port: {Port}");
+                if (Log.IsEnabled(LogEventLevel.Information))
+                {
+                    Log.Logger.Information("Success reserving and opening port: {Port}", Port);
+                }
 
                 _snackbarService.EnqueueWithOk(Properties.Resources.PORT_OPENED);
             }
@@ -956,29 +976,29 @@ public class SettingsPageViewModel : ObservableObject, IPage
 
     private static FullScreenClockModeItem[] GetTimeOfDayModes()
     {
-        return new[]
-        {
+        return
+        [
             new FullScreenClockModeItem(FullScreenClockMode.Analogue, Properties.Resources.FULL_SCREEN_ANALOGUE),
             new FullScreenClockModeItem(FullScreenClockMode.Digital, Properties.Resources.FULL_SCREEN_DIGITAL),
             new FullScreenClockModeItem(FullScreenClockMode.AnalogueAndDigital, Properties.Resources.FULL_SCREEN_BOTH)
-        };
+        ];
     }
 
     private static AdaptiveModeItem[] GetAdaptiveModes()
     {
-        return new[]
-        {
+        return
+        [
             new AdaptiveModeItem(AdaptiveMode.None, Properties.Resources.ADAPTIVE_MODE_NONE),
             new AdaptiveModeItem(AdaptiveMode.OneWay, Properties.Resources.ADAPTIVE_MODE_ONE_WAY),
             new AdaptiveModeItem(AdaptiveMode.TwoWay, Properties.Resources.ADAPTIVE_MODE_TWO_WAY)
-        };
+        ];
     }
 
-    private static IEnumerable<WebClockPortItem> GetPorts()
+    private static List<WebClockPortItem> GetPorts()
     {
         var result = new List<WebClockPortItem>();
 
-        for (int n = Options.DefaultPort; n <= Options.DefaultPort + Options.MaxPossiblePorts; ++n)
+        for (var n = Options.DefaultPort; n <= Options.DefaultPort + Options.MaxPossiblePorts; ++n)
         {
             result.Add(new WebClockPortItem { Port = n });
         }
@@ -1025,21 +1045,21 @@ public class SettingsPageViewModel : ObservableObject, IPage
 
     private static AutoMeetingTime[] GetAutoMeetingTimes()
     {
-        return new[]
-        {
+        return
+        [
             new AutoMeetingTime(MidWeekOrWeekend.MidWeek, Properties.Resources.MIDWEEK),
             new AutoMeetingTime(MidWeekOrWeekend.Weekend, Properties.Resources.WEEKEND)
-        };
+        ];
     }
 
     private static CountdownElementsToShowItem[] GetCountdownElementsToShowItems()
     {
-        return new[]
-        {
+        return
+        [
             new CountdownElementsToShowItem(ElementsToShow.DialAndDigital, Properties.Resources.DIAL_AND_DIGITAL),
             new CountdownElementsToShowItem(ElementsToShow.Dial, Properties.Resources.DIAL),
             new CountdownElementsToShowItem(ElementsToShow.Digital, Properties.Resources.DIGITAL)
-        };
+        ];
     }
 
     private static CountdownDurationItem[] GetCountdownDurationItems()
@@ -1049,8 +1069,8 @@ public class SettingsPageViewModel : ObservableObject, IPage
 
     private static OnScreenLocationItem[] GetScreenLocationItems()
     {
-        return new[]
-        {
+        return
+        [
             new OnScreenLocationItem(Properties.Resources.SCREEN_LOCATION_CENTRE, ScreenLocation.Centre),
             new OnScreenLocationItem(Properties.Resources.SCREEN_LOCATION_LEFT, ScreenLocation.Left),
             new OnScreenLocationItem(Properties.Resources.SCREEN_LOCATION_TOP, ScreenLocation.Top),
@@ -1059,18 +1079,18 @@ public class SettingsPageViewModel : ObservableObject, IPage
             new OnScreenLocationItem(Properties.Resources.SCREEN_LOCATION_TOP_LEFT, ScreenLocation.TopLeft),
             new OnScreenLocationItem(Properties.Resources.SCREEN_LOCATION_TOP_RIGHT, ScreenLocation.TopRight),
             new OnScreenLocationItem(Properties.Resources.SCREEN_LOCATION_BOTTOM_LEFT, ScreenLocation.BottomLeft),
-            new OnScreenLocationItem(Properties.Resources.SCREEN_LOCATION_BOTTOM_RIGHT, ScreenLocation.BottomRight),
-        };
+            new OnScreenLocationItem(Properties.Resources.SCREEN_LOCATION_BOTTOM_RIGHT, ScreenLocation.BottomRight)
+        ];
     }
 
     private static OperatingModeItem[] GetOperatingModes()
     {
-        return new[]
-        {
+        return
+        [
             new OperatingModeItem(Properties.Resources.OP_MODE_MANUAL, OperatingMode.Manual),
             new OperatingModeItem(Properties.Resources.OP_MODE_FILE, OperatingMode.ScheduleFile),
             new OperatingModeItem(Properties.Resources.OP_MODE_AUTO, OperatingMode.Automatic)
-        };
+        ];
     }
 
     private static LanguageItem[] GetSupportedLanguages()
@@ -1188,5 +1208,16 @@ public class SettingsPageViewModel : ObservableObject, IPage
         }
 
         return MonitorChangeDescription.MonitorToMonitor;
+    }
+
+    private string GetLocalIpAddress()
+    {
+        var manuallySpecifiedAddress = _commandLineService.RemoteIpAddress;
+        if (!string.IsNullOrWhiteSpace(manuallySpecifiedAddress))
+        {
+            return manuallySpecifiedAddress;
+        }
+
+        return LocalIpAddress.GetLocalIp4Address();
     }
 }

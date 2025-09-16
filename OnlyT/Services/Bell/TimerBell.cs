@@ -1,11 +1,11 @@
-﻿using System.Windows;
+﻿using OnlyT.EventTracking;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using NAudio.Wave;
 using System;
 using System.IO;
 using Serilog;
-using OnlyT.EventTracking;
 
 namespace OnlyT.Services.Bell;
 
@@ -41,8 +41,7 @@ internal sealed class TimerBell : ObservableObject, IDisposable
             }
         }
     }
-
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
+    
     public void Play(int volumePercent)
     {
         if (!IsPlaying)
@@ -62,7 +61,7 @@ internal sealed class TimerBell : ObservableObject, IDisposable
                 }
                 else
                 {
-                    Log.Logger.Error($"Could not find bell file {_bellFilePath}");
+                    Log.Logger.Error("Could not find bell file {BellFilePath}", _bellFilePath);
                 }
             }
             catch (Exception ex)

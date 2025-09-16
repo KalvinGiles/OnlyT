@@ -217,7 +217,7 @@
     <value>Zborové štúdium Biblie</value>
   </data>
   <data name="TALK_DIGGING" xml:space="preserve">
-    <value>Spiritual Gems</value>
+    <value>Poklady z Božieho Slova</value>
   </data>
   <data name="TALK_LIVING1" xml:space="preserve">
     <value>Život kresťana casť-1</value>
@@ -705,11 +705,11 @@ Shift - Increase 5m</value>
     <comment>Text displayed in web interface</comment>
   </data>
   <data name="SHRINK_ON_MINIMISE" xml:space="preserve">
-    <value>Shrink on minimise</value>
+    <value>Pri minimalizácii zmenšiť</value>
     <comment>See Settings =&gt; Misc =&gt; Shrink on minimise</comment>
   </data>
   <data name="PRIMARY_MONITOR" xml:space="preserve">
-    <value>primary</value>
+    <value>primárny</value>
     <comment>Used to designate the primary monitor</comment>
   </data>
   <data name="TIMER_ON_NDI" xml:space="preserve">
@@ -735,5 +735,9 @@ Shift - Increase 5m</value>
   <data name="OVERRUN_NOTIFICATIONS" xml:space="preserve">
     <value>Overrun/Underrun notifications</value>
     <comment>See Settings =&gt; Misc =&gt; Overrun</comment>
+  </data>
+  <data name="DARK_MODE" xml:space="preserve">
+    <value>Tmavý mód</value>
+    <comment>See Settings, Miscellaneous</comment>
   </data>
 </root>

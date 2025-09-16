@@ -1,36 +1,34 @@
-﻿#if !DEBUG
-#define USE_APP_CENTER
-#endif
-
-using System;
-using System.Windows.Threading;
+﻿using CommunityToolkit.Mvvm.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+using OnlyT.EventTracking;
+using OnlyT.AutoUpdates;
 using OnlyT.Common.Services.DateTime;
 using OnlyT.Services.Bell;
 using OnlyT.Services.CommandLine;
 using OnlyT.Services.CountdownTimer;
+using OnlyT.Services.LogLevelSwitch;
 using OnlyT.Services.Monitors;
 using OnlyT.Services.Options;
 using OnlyT.Services.OutputDisplays;
+using OnlyT.Services.OverrunNotificationService;
+using OnlyT.Services.Reminders;
 using OnlyT.Services.Report;
 using OnlyT.Services.Snackbar;
 using OnlyT.Services.TalkSchedule;
 using OnlyT.Services.ZoomEvent;
 using OnlyT.Services.Timer;
+using OnlyT.Utils;
+using OnlyT.ViewModel;
 using OnlyT.WebServer;
+using Sentry;
+using Serilog;
+using Serilog.Events;
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Windows;
-using CommunityToolkit.Mvvm.DependencyInjection;
-using OnlyT.AutoUpdates;
-using OnlyT.Services.LogLevelSwitch;
-using OnlyT.ViewModel;
-using Serilog;
-using OnlyT.Utils;
-using System.Diagnostics;
-using OnlyT.EventTracking;
-using OnlyT.Services.OverrunNotificationService;
-using OnlyT.Services.Reminders;
+using System.Windows.Threading;
 
 namespace OnlyT
 {
@@ -43,16 +41,23 @@ namespace OnlyT
         private Mutex? _appMutex;
         private static readonly Lazy<CommandLineService> CommandLineServiceInstance = new();
 
+        public App()
+        {
+            InitSentry(); // Sentry docs require it to be in the ctor rather than in OnStartup
+        }
+
         protected override void OnExit(ExitEventArgs e)
         {
             _appMutex?.Dispose();
-            Log.Logger.Information("==== Exit ====");
+
+            if (Log.IsEnabled(LogEventLevel.Information))
+            {
+                Log.Logger.Information("==== Exit ====");
+            }
         }
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            ConfigureAppCenter();
-
             ConfigureServices();
 
             if (AnotherInstanceRunning())
@@ -65,12 +70,6 @@ namespace OnlyT
             }
 
             Current.DispatcherUnhandledException += CurrentDispatcherUnhandledException;
-        }
-
-        [Conditional("USE_APP_CENTER")]
-        private static void ConfigureAppCenter()
-        {
-            AppCenterInit.Execute();
         }
 
         private void CurrentDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -92,7 +91,7 @@ namespace OnlyT
             serviceCollection.AddSingleton<IOptionsService, OptionsService>();
             serviceCollection.AddSingleton<ITalkScheduleService, TalkScheduleService>();
             serviceCollection.AddSingleton<IBellService, BellService>();
-            serviceCollection.AddSingleton<IZoomEventService, ZoomEventService>();
+            serviceCollection.AddSingleton<IHandRaiseService, HandRaiseService>();
             serviceCollection.AddSingleton<IAdaptiveTimerService, AdaptiveTimerService>();
             serviceCollection.AddSingleton<IHttpServer, HttpServer>();
             serviceCollection.AddSingleton<ICommandLineService, CommandLineService>();
@@ -116,6 +115,10 @@ namespace OnlyT
             
             var serviceProvider = serviceCollection.BuildServiceProvider();
             Ioc.Default.ConfigureServices(serviceProvider);
+
+            // possibly override docs folder from commandline
+            var commandLineService = serviceProvider.GetService<ICommandLineService>()!;
+            FileUtils.OverrideDocumentFolder(commandLineService.OnlyTDocsFolder);
         }
 
         private CommandLineService CommandLineServiceFactory(IServiceProvider arg)
@@ -123,7 +126,9 @@ namespace OnlyT
             return CommandLineServiceInstance.Value;
         }
 
+#pragma warning disable U2U1011 // Return types should be specific
         private IDateTimeService DateTimeServiceFactory(IServiceProvider arg)
+#pragma warning restore U2U1011 // Return types should be specific
         {
             return new DateTimeService(CommandLineServiceInstance.Value.DateTimeOnLaunch);
         }
@@ -139,14 +144,15 @@ namespace OnlyT
                     .WriteTo.File(Path.Combine(logsDirectory, "log-.txt"), retainedFileCountLimit: 28, rollingInterval: RollingInterval.Day)
                     .CreateLogger();
 
-                Log.Logger.Information("==== Launched ====");
-                Log.Logger.Information($"Version {VersionDetection.GetCurrentVersion()}");
+                if (Log.IsEnabled(LogEventLevel.Information))
+                {
+                    Log.Logger.Information("==== Launched ====");
+                    Log.Logger.Information("Version {Version}", VersionDetection.GetCurrentVersion());
+                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // logging won't work but silently fails
-                EventTracker.Error(ex, "Logging cannot be configured");
-
                 // "no-op" logger
                 Log.Logger = new LoggerConfiguration().CreateLogger();
             }
@@ -166,6 +172,24 @@ namespace OnlyT
 
             _appMutex = new Mutex(true, _appString, out var newInstance);
             return !newInstance;
+        }
+
+        private static void InitSentry()
+        {
+            // https://soundbox.sentry.io/
+            // https://docs.sentry.io/platforms/dotnet/guides/wpf/
+            SentrySdk.Init(o =>
+            {
+                // Tells which project in Sentry to send events to:
+                o.Dsn = "https://a507dcd971e89dc9b69a630090030ba7@o4509644339281920.ingest.de.sentry.io/4509753015926864";
+
+#if DEBUG
+                o.Debug = true;
+#endif
+                o.IsGlobalModeEnabled = true;
+
+                // o.TracesSampleRate = 1.0; // Adjust for performance monitoring. 1.0 means 100% of messages are sent.
+            });
         }
     }
 }

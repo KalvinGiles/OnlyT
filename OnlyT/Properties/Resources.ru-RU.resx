@@ -721,7 +721,7 @@ Shift - Increase 5m</value>
     <comment>Reminder msg that pops up if OnlyT thinks you may have forgotten!</comment>
   </data>
   <data name="TIMER_REMINDER" xml:space="preserve">
-    <value>Pop-up reminders</value>
+    <value>Всплывающие уведомления</value>
     <comment>See Settings =&gt; Misc =&gt; Pop-up reminders</comment>
   </data>
   <data name="OVERRUN_MSG" xml:space="preserve">
@@ -735,5 +735,9 @@ Shift - Increase 5m</value>
   <data name="OVERRUN_NOTIFICATIONS" xml:space="preserve">
     <value>Overrun/Underrun notifications</value>
     <comment>See Settings =&gt; Misc =&gt; Overrun</comment>
+  </data>
+  <data name="DARK_MODE" xml:space="preserve">
+    <value>Темная тема</value>
+    <comment>See Settings, Miscellaneous</comment>
   </data>
 </root>

@@ -140,6 +140,8 @@
 
         public bool IsWebClockEnabled { get; set; }
 
+        public bool DarkModeToggle { get; set; }
+        
         public bool AllowCountUpToggle { get; set; }
 
         public MeetingStartTimes.MeetingStartTimes MeetingStartTimes { get; set; }
@@ -251,14 +253,15 @@
 
             var clock24 = dateFormat.Contains('H');
             var leadingZero = dateFormat.Contains("HH") || dateFormat.Contains("hh");
-            var ampm = dateFormat.Contains("tt");
-
+            
             if (clock24)
             {
                 ClockHourFormat = leadingZero ? ClockHourFormat.Format24LeadingZero : ClockHourFormat.Format24;
             }
             else
             {
+                var ampm = dateFormat.Contains("tt");
+
                 if (leadingZero)
                 {
                     ClockHourFormat = ampm

@@ -1,15 +1,16 @@
-﻿using PdfSharpCore.Charting;
+﻿using OnlyT.Common.Services.DateTime;
+using OnlyT.Report.Models;
+using OnlyT.Report.Properties;
+using PdfSharpCore.Charting;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
+using Serilog;
+using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using OnlyT.Common.Services.DateTime;
-using OnlyT.Report.Models;
-using OnlyT.Report.Properties;
-using Serilog;
 
 namespace OnlyT.Report.Pdf
 {
@@ -20,11 +21,11 @@ namespace OnlyT.Report.Pdf
 
         private readonly MeetingTimes _data;
         private readonly string _outputFolder;
-        private readonly XBrush _blackBrush = XBrushes.Black;
-        private readonly XBrush _grayBrush = XBrushes.Gray;
-        private readonly XBrush _lightGrayBrush = XBrushes.LightGray;
-        private readonly XBrush _greenBrush = XBrushes.Green;
-        private readonly XBrush _redBrush = XBrushes.Red;
+        private readonly XSolidBrush _blackBrush = XBrushes.Black;
+        private readonly XSolidBrush _grayBrush = XBrushes.Gray;
+        private readonly XSolidBrush _lightGrayBrush = XBrushes.LightGray;
+        private readonly XSolidBrush _greenBrush = XBrushes.Green;
+        private readonly XSolidBrush _redBrush = XBrushes.Red;
         private readonly HistoricalMeetingTimes? _historicalASummary;
 
         private readonly IQueryWeekendService _queryWeekendService;
@@ -68,7 +69,10 @@ namespace OnlyT.Report.Pdf
         {
             var fileName = GetOutputFileName();
 
-            Log.Logger.Debug($"Executing PdfTimerReport: {fileName}");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug("Executing PdfTimerReport: {FileName}", fileName);
+            }
 
             using var doc = new PdfDocument();
 
@@ -76,7 +80,11 @@ namespace OnlyT.Report.Pdf
 
             using (var g = XGraphics.FromPdfPage(page))
             {
-                Log.Logger.Debug("Creating fonts and page metrics");
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Logger.Debug("Creating fonts and page metrics");
+                }
+
                 CreateFonts();
                 CalcMetrics(page);
 
@@ -87,7 +95,10 @@ namespace OnlyT.Report.Pdf
                 {
                     var item = itemArray[n];
 
-                    Log.Logger.Debug($"Printing item: {item.Description}, {item.Start} - {item.End}");
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Logger.Debug("Printing item: {Description}, {Start} - {End}", item.Description, item.Start, item.End);
+                    }
 
                     DrawItem(g, item);
                     if (item.IsStudentTalk && n != itemArray.Length - 1)
@@ -107,12 +118,20 @@ namespace OnlyT.Report.Pdf
 
                 if (_data.MeetingPlannedEnd != default && _data.MeetingActualEnd != default)
                 {
-                    Log.Logger.Debug("Printing summary");
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Logger.Debug("Printing summary");
+                    }
+
                     DrawSummary(g, _data.MeetingPlannedEnd, _data.MeetingActualEnd);
                 }
             }
 
-            Log.Logger.Debug("Printing historical summary");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Logger.Debug("Printing historical summary");
+            }
+            
             DrawHistoricalSummary(doc);
 
             doc.Save(fileName);
@@ -166,9 +185,11 @@ namespace OnlyT.Report.Pdf
 
                 var c = new Chart(ChartType.Column2D);
                 c.Font.Name = "Verdana";
-                
+
+#pragma warning disable U2U1017                
                 var xSeries = c.XValues.AddXSeries();
                 var ySeries = c.SeriesCollection.AddSeries();
+#pragma warning restore U2U1017
 
                 c.YAxis.MaximumScale = LargestDeviationMins;
                 c.YAxis.MinimumScale = -LargestDeviationMins;
@@ -193,11 +214,11 @@ namespace OnlyT.Report.Pdf
                     ChartMeetingType.Both => Resources.MIDWEEK_AND_WEEKEND_MTGS,
                     _ => throw new NotSupportedException()
                 };
-
-                var currentMonth = default(DateTime);
-
+                
                 if (_historicalASummary != null)
                 {
+                    var currentMonth = DateTime.MinValue;
+
                     foreach (var summary in _historicalASummary.Summaries)
                     {
                         if (UseSummary(summary, mtgType))
@@ -417,7 +438,7 @@ namespace OnlyT.Report.Pdf
             _currentY += (3 * (double)_itemTitleFont.Height) / 2;
         }
 
-        private double DrawTimesString(XGraphics g, MeetingTimedItem item, double curX, XBrush textBrush)
+        private double DrawTimesString(XGraphics g, MeetingTimedItem item, double curX, XSolidBrush textBrush)
         {
             if (_stdTimeFont == null)
             {
@@ -478,7 +499,7 @@ namespace OnlyT.Report.Pdf
             return curX;
         }
 
-        private XSize DrawDurationString(XGraphics g, TimeSpan duration, double curX, XBrush textBrush)
+        private XSize DrawDurationString(XGraphics g, TimeSpan duration, double curX, XSolidBrush textBrush)
         {
             var durStr = $"{(int)duration.TotalMinutes:D2}:{duration.Seconds:D2}";
             var szDur = g.MeasureString(durStr, _durationFont);

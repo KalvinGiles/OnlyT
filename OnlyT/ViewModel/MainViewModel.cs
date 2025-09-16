@@ -2,6 +2,26 @@
 
 // Ignore Spelling: Snackbar
 
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
+using MaterialDesignThemes.Wpf;
+using OnlyT.Common.Services.DateTime;
+using OnlyT.EventArgs;
+using OnlyT.EventTracking;
+using OnlyT.Models;
+using OnlyT.Services.CommandLine;
+using OnlyT.Services.CountdownTimer;
+using OnlyT.Services.Options;
+using OnlyT.Services.OutputDisplays;
+using OnlyT.Services.OverrunNotificationService;
+using OnlyT.Services.Reminders;
+using OnlyT.Services.Snackbar;
+using OnlyT.Services.Timer;
+using OnlyT.ViewModel.Messages;
+using OnlyT.WebServer;
+using OnlyT.Windows;
+using Serilog;
+using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,25 +30,6 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Messaging;
-using OnlyT.EventArgs;
-using MaterialDesignThemes.Wpf;
-using OnlyT.ViewModel.Messages;
-using OnlyT.Common.Services.DateTime;
-using OnlyT.Models;
-using OnlyT.Services.OutputDisplays;
-using OnlyT.Services.Snackbar;
-using Serilog;
-using OnlyT.Services.CommandLine;
-using OnlyT.Services.CountdownTimer;
-using OnlyT.Services.Options;
-using OnlyT.Services.Timer;
-using OnlyT.WebServer;
-using OnlyT.Windows;
-using OnlyT.EventTracking;
-using OnlyT.Services.OverrunNotificationService;
-using OnlyT.Services.Reminders;
 
 namespace OnlyT.ViewModel;
 
@@ -39,7 +40,7 @@ namespace OnlyT.ViewModel;
 // ReSharper disable once ClassNeverInstantiated.Global
 public class MainViewModel : ObservableObject
 {
-    private readonly Dictionary<string, FrameworkElement> _pages = new();
+    private readonly Dictionary<string, FrameworkElement> _pages = [];
     private readonly IReminderService _reminderService;
     private readonly IOverrunService _overrunService;
     private readonly IOptionsService _optionsService;
@@ -78,7 +79,7 @@ public class MainViewModel : ObservableObject
         if (commandLineService.NoGpu || ForceSoftwareRendering())
         {
             // disable hardware (GPU) rendering so that it's all done by the CPU...
-            EventTracker.Track(EventName.DisableGPU);
+            EventTracker.AddBreadcrumb(EventName.DisableGpu, "rendering:software");
             RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
         }
 
@@ -107,7 +108,9 @@ public class MainViewModel : ObservableObject
         WeakReferenceMessenger.Default.Send(new NavigateMessage(null, OperatorPageViewModel.PageName, null));
 
         // (fire and forget)
-        Task.Run(LaunchTimerWindowAsync);
+        Task.Run(LaunchTimerWindowAsync).ContinueWith(
+            t => Log.Logger.Error(t.Exception, "Error launching timer window"),
+            TaskContinuationOptions.OnlyOnFaulted);
 
         InitHeartbeatTimer();
     }
@@ -132,7 +135,7 @@ public class MainViewModel : ObservableObject
         _timerOutputDisplayService.IsWindowVisible() ||
         _countdownDisplayService.IsWindowVisible();
 
-    public string? CurrentPageName { get; private set; }
+    public string? CurrentPageName { get; set; }
 
     private bool CountDownActive => _countdownDisplayService.IsCountingDown;
 
@@ -191,7 +194,7 @@ public class MainViewModel : ObservableObject
     {
         if (_optionsService.Options.IsWebClockEnabled || _optionsService.Options.IsApiEnabled)
         {
-            EventTracker.Track(EventName.InitHttpServer);
+            EventTracker.AddBreadcrumb(EventName.InitHttpServer, $"http-server-port:{_optionsService.Options.HttpServerPort}");
             _httpServer.Start(_optionsService.Options.HttpServerPort);
         }
     }
@@ -340,10 +343,14 @@ public class MainViewModel : ObservableObject
     {
         if (_optionsService.CanDisplayTimerWindow)
         {
-            // on launch we display the timer window after a short delay (for aesthetics only)
+            // on launch, we display the timer window after a short delay (for aesthetics only)
             await Task.Delay(1000).ConfigureAwait(true);
 
-            await Application.Current.Dispatcher.BeginInvoke(OpenTimerWindow);
+            if (Application.Current != null)
+            {
+                // protect against shut down race condition
+                await Application.Current.Dispatcher.BeginInvoke(OpenTimerWindow);
+            }
         }
     }
 
@@ -416,7 +423,7 @@ public class MainViewModel : ObservableObject
         CurrentPage = _pages[message.TargetPageName];
         CurrentPageName = message.TargetPageName;
 
-        var page = (IPage)CurrentPage.DataContext;
+        var page = (IPage) CurrentPage.DataContext;
         page.Activated(message.State);
     }
 
@@ -485,8 +492,12 @@ public class MainViewModel : ObservableObject
     {
         if (_optionsService.CanDisplayCountdownWindow)
         {
-            Log.Logger.Information("Launching countdown timer");
-            EventTracker.Track(EventName.CountdownTimer);
+            if (Log.IsEnabled(LogEventLevel.Information))
+            {
+                Log.Logger.Information("Launching countdown timer");
+            }
+
+            EventTracker.AddBreadcrumb(EventName.CountdownTimer, $"countdown-offset:{offsetSeconds}");
 
             _countdownDisplayService.Start(offsetSeconds);
 

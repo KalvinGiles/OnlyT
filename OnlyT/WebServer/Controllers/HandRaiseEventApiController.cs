@@ -6,19 +6,19 @@ using OnlyT.Services.ZoomEvent;
 
 namespace OnlyT.WebServer.Controllers;
 
-internal sealed class ZoomEventApiController : BaseApiController
+internal sealed class HandRaiseEventApiController : BaseApiController
 {
     private readonly IOptionsService _optionsService;
-    private readonly IZoomEventService _zoomEventService;
+    private readonly IHandRaiseService _handRaiseEventService;
     private readonly ApiThrottler _apiThrottler;
 
-    public ZoomEventApiController(
+    public HandRaiseEventApiController(
         IOptionsService optionsService,
-        IZoomEventService zoomEventService,
+        IHandRaiseService handRaiseEventService,
         ApiThrottler apiThrottler )
     {
         _optionsService = optionsService;
-        _zoomEventService = zoomEventService;
+        _handRaiseEventService = handRaiseEventService;
         _apiThrottler = apiThrottler;
     }
 
@@ -31,10 +31,10 @@ internal sealed class ZoomEventApiController : BaseApiController
 
         var responseData = new ZoomEventResponseData();
 
-        if (!_zoomEventService.HandIsRaised)
+        if (!_handRaiseEventService.HandIsRaised)
         {
             responseData.Success = true;
-            _zoomEventService.RaiseHand();
+            _handRaiseEventService.RaiseHand();
         }
         else
         {
